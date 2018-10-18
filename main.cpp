@@ -16,7 +16,11 @@ int main()
 {
     // printf("start");
     Logs logs;
-    logs.setLogLevel(LOGS_LEVEL_WARN);
+    const char *szName = "test.log";
+    const char *szPath = "/home/minho/d/workspace/c-lang/logs/log/";
+    logs.setLogName(szName);
+    logs.setLogPath(szPath);
+    logs.setLogLevel(LOGS_LEVEL_ALL);
     // logs.init();
     char szText[100] = {0};
     sprintf(szText, "The Trace log");
