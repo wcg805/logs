@@ -8,9 +8,16 @@
 
 #include "logs.h"
 
+pthread_t g_threadId;
+FILE *pFileHandle = NULL;
+
+void *WriteLogThread(void *ptr);
+
 int Logs::init()
 {
-    printf("function init output strings\n");
+    // printf("function init output strings\n");
+
+    //初始化时, 生成一个默认的日志文件, 记录日志系统自己的日志, 程序启动时
 }
 
 int Logs::setLogPath(const char *szPath)
@@ -23,6 +30,14 @@ int Logs::setLogPath(const char *szPath)
 int Logs::setLogName(const char *szName)
 {
     sprintf(m_szLogName, "%s", szName);
+    char szFullPath[4096] = {0};
+    sprintf(szFullPath, "%s%s", m_szLogPath, m_szLogName);
+    if ((pFileHandle = fopen(szFullPath, "a+")) == NULL)
+    {
+        pFileHandle = NULL;
+        perror("open");
+        exit(EXIT_FAILURE);
+    }
     return 0;
 }
 
@@ -126,25 +141,40 @@ int Logs::write(LOGS_LEVEL eLevel, const char *szMsg)
     getLogTime(szTime);
     sprintf(szLogText, "%s %s %s\r\n", szTime, szLevel, szMsg);
     printf("%s", szLogText);
+
     writeFile((const char *)szLogText);
     return 0;
 }
 
 int Logs::writeFile(const char *szMsg)
 {
-    FILE *file;
-
-    char szFullPath[4096] = {0};
-    sprintf(szFullPath, "%s%s", m_szLogPath, m_szLogName);
-
-    //打开文件
-    if ((file = fopen(szFullPath, "a+")) == NULL)
+    if (true)
     {
-        perror("open");
-        exit(EXIT_FAILURE);
+        struct LogItem *stItem;
+        stItem = (struct LogItem *)malloc(sizeof(struct LogItem));
+
+        memset(stItem->szText, 0, 2048);
+        strncpy(stItem->szText, szMsg, strlen(szMsg));
+
+        g_lstLogItemList.push_back(stItem);
     }
-    fwrite(szMsg, 1, strlen(szMsg), file); //写入语句
-    fclose(file);
+    else
+    {
+        FILE *file;
+
+        char szFullPath[4096] = {0};
+        sprintf(szFullPath, "%s%s", m_szLogPath, m_szLogName);
+
+        //打开文件
+        if ((file = fopen(szFullPath, "a+")) == NULL)
+        {
+            perror("open");
+            exit(EXIT_FAILURE);
+        }
+        fwrite(szMsg, 1, strlen(szMsg), file); //写入语句
+        fclose(file);
+    }
+
     return 0;
 }
 
@@ -191,7 +221,23 @@ int Logs::getLogTime(char *szTime)
     return 0;
 }
 
-int Logs::output(const char *szMsg)
+void *WriteLogThread(void *ptr)
 {
-    return 0;
+    while (true)
+    {
+        if (!g_lstLogItemList.empty())
+        {
+            struct LogItem *stLogItem;
+            stLogItem = (struct LogItem *)g_lstLogItemList.front();
+
+            //TODO: 写入文件
+            if (pFileHandle != NULL)
+            {
+                fwrite(stLogItem->szText, 1, strlen(stLogItem->szText), pFileHandle); //写入语句
+            }
+
+            g_lstLogItemList.pop_front();
+        }
+        usleep(10);
+    }
 }

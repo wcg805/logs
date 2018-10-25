@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <string.h>
+#include <list>
 
 #include <sys/time.h>
 
@@ -40,6 +41,15 @@ enum LOGS_LEVEL
     LEVEL_OFF
 };
 
+struct LogItem
+{
+    char szText[2048] = {0};
+};
+
+typedef list<LogItem *> LIST_LOG_ITEM;
+
+LIST_LOG_ITEM g_lstLogItemList;
+
 class Logs
 {
   private:
@@ -64,5 +74,4 @@ class Logs
     int writeFile(const char *szMsg);
     int getLevelString(char *szOut, LOGS_LEVEL eLevel);
     int getLogTime(char *szTime);
-    int output(const char *szMsg);
 };
